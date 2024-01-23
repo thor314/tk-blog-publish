@@ -158,7 +158,7 @@ struct FilePair {
 
 fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), MyError> {
   debug!("source_filename: {:?}", &source_path);
-  let mut content = fs::read_to_string(source_path).expect("could not read file");
+  let content = fs::read_to_string(source_path).expect("could not read file");
   let original_date =
     content.lines().find(|line| line.starts_with("date: ")).unwrap().replace("date: ", "");
 
@@ -180,14 +180,6 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
   };
   debug!("target: {target_path:?}");
 
-  // update `last-update` field in content
-  let last_update = format!("last-update: {}", Local::now().format(DATE_FORMAT));
-  content = content
-    .lines()
-    .map(|line| if line.starts_with("last-update:") { &last_update } else { line })
-    .collect::<Vec<_>>()
-    .join("\n");
-
   // update original file with new `last-update` field
   {
     let mut file = fs::File::create(source_path)?;
@@ -208,9 +200,19 @@ fn update_images(original_date: &str, content: &str, target_path: &Path) -> Resu
   // - for each image, copy the image from the source_img_dir to the target image dir.
 
   // update image links in target (but not source)
+  let first_word = target_path
+    .file_name()
+    .expect("Invalid target file name")
+    .to_str()
+    .expect("Non-UTF8 target file name")
+    .split_whitespace()
+    .next()
+    .expect("No first word in target file name");
+
   let target_image_dir = PathBuf::from(format!(
-    "{TARGET_IMG_PATH_STR}/{}",
-    original_date // just use date, since it won't ever have weird edge cases or spaces
+    "{TARGET_IMG_PATH_STR}/{}-{}",
+    original_date, // just use date, since it won't ever have weird edge cases or spaces
+    first_word
   ));
   let target_image_dir_name = original_date.to_string();
 
