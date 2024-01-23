@@ -187,6 +187,22 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
     info!("updated source file created on date: {original_date}");
   }
 
+  // look for instances of:
+  // $$\begin{align} ... \end{align}$$
+  // and replace with $$line$$ for each line
+  // let re = regex::Regex::new(r"\$\$\\begin\{align\}(.*\n?)+\\end\{align\}\$\$").unwrap();
+  // let content = re
+  //   .replace_all(&content, |caps: &regex::Captures| {
+  //     let lines = caps[1].lines();
+  //     let mut new_content = String::new();
+  //     for line in lines {
+  //       new_content.push_str(&format!("$$ {} $$\n", line));
+  //     }
+  //     debug!("new_content: {:?}", new_content);
+  //     new_content
+  //   })
+  //   .to_string();
+
   if assume_blog {
     update_images(&original_date, &content, &target_path)?;
   }
@@ -207,14 +223,17 @@ fn update_images(original_date: &str, content: &str, target_path: &Path) -> Resu
     .expect("Non-UTF8 target file name")
     .split_whitespace()
     .next()
-    .expect("No first word in target file name");
+    .expect("No first word in target file name")
+    .split('-')
+    .last()
+    .expect("No first word after dash in target file name");
 
   let target_image_dir = PathBuf::from(format!(
     "{TARGET_IMG_PATH_STR}/{}-{}",
     original_date, // just use date, since it won't ever have weird edge cases or spaces
     first_word
   ));
-  let target_image_dir_name = original_date.to_string();
+  let target_image_dir_name = target_image_dir.file_name().unwrap().to_str().unwrap();
 
   // update image links to match hugo syntax
   // match against syntax ![[image.png]]
