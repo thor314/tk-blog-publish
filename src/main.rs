@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
-// #![allow(unused_variables)]
 #![allow(dead_code)]
+#![allow(unused_variables)]
 // #![allow(unreachable_code)]
 // #![allow(non_snake_case)]
 // #![allow(clippy::clone_on_copy)]
@@ -8,12 +8,15 @@
 use std::{
   fs,
   io::Write,
+  option,
   path::{Path, PathBuf},
 };
 
+use anyhow::Context;
 use chrono::Local;
 use error::MyError;
 use log::{debug, info, trace};
+use serde::{Deserialize, Serialize};
 
 use crate::cli::Cli;
 
@@ -27,16 +30,142 @@ const DATE_FORMAT: &str = "%Y-%m-%d";
 const TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/posts";
 const SOURCE_IMG_PATH_STR: &str = "/home/thor/obsidian/media/image";
 const TARGET_IMG_PATH_STR: &str = "/home/thor/projects/blog/static/photos";
+const CONFIG_FILE_PATH: &str = "/home/thor/.files/scripts/tkblogpublish/config.toml";
 
 fn main() -> Result<(), MyError> {
-  let Cli { source_path, target_path, config: _ } = &utils::setup()?;
+  let cli = &utils::setup()?;
+  match cli {
+    Cli::One(c) => update_file(&c.source_path, &c.target_path)?,
+    Cli::All(c) => update_files(&c.config)?,
+    Cli::ConfigAdd(c) => add_file(&c.config, &c.source_path, &c.target_path)?,
+    Cli::ConfigRemove(c) => remove_file(&c.config, &c.source_path)?,
+  }
+
+  Ok(())
+}
+
+fn remove_file(
+  config: &Option<PathBuf>,
+  source_path: &Path,
+  // target_path: &Option<PathBuf>,
+) -> Result<(), MyError> {
+  let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
+  let config_content = fs::read_to_string(config_path.clone()).expect("could not read config file");
+  let mut config: Config = toml::from_str(&config_content).expect("Could not parse config file");
+
+  // Look for any file matching end of source_path name and remove it
+  let file_name = source_path
+    .file_name()
+    .ok_or_else(|| anyhow::anyhow!("Invalid source path"))?
+    .to_str()
+    .ok_or_else(|| anyhow::anyhow!("Non-UTF8 source file name"))?;
+
+  let initial_len = config.files.len();
+  config.files.retain(|fp| fp.source.file_name().map_or(false, |name| name != file_name));
+
+  if config.files.len() == initial_len {
+    // No file was removed, indicating the file was not found
+    return Err(anyhow::anyhow!("Source file not found in config").into());
+  }
+
+  info!("Removing file from config: {:?}", source_path);
+
+  // Serialize the updated configuration back to TOML
+  let updated_config = toml::to_string(&config).with_context(|| "Could not serialize config")?;
+
+  // Write the updated TOML content back to the configuration file
+  fs::File::create(&config_path)
+    .and_then(|mut file| file.write_all(updated_config.as_bytes()))
+    .with_context(|| format!("Could not write to config file at {:?}", config_path))?;
+
+  Ok(())
+}
+
+/// add a file to config file
+fn add_file(
+  config: &Option<PathBuf>,
+  source_path: &Path,
+  target_path: &Option<PathBuf>,
+) -> Result<(), MyError> {
+  let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
+  let config_content = fs::read_to_string(config_path.clone()).expect("could not read config file");
+  let mut config: Config = toml::from_str(&config_content).expect("Could not parse config file");
+
+  // assert that source path exists
+  if !source_path.exists() {
+    return Err(anyhow::anyhow!("source path does not exist").into());
+  }
+
+  // Replace relative paths with absolute paths
+  let absolute_source_path = fs::canonicalize(source_path)
+    .with_context(|| format!("Could not canonicalize source path {:?}", source_path))?;
+  let absolute_target_path = match target_path {
+    Some(path) => Some(
+      fs::canonicalize(path)
+        .with_context(|| format!("Could not canonicalize target path {:?}", path))?,
+    ),
+    None => None,
+  };
+
+  // Check that source path is not already in config
+  if config.files.iter().any(|fp| fp.source == absolute_source_path) {
+    return Err(anyhow::anyhow!("Source path already exists in config").into());
+  }
+
+  info!("Adding file to config: {:?} {:?}", absolute_source_path, absolute_target_path);
+
+  // Create a new file pair
+  let new_file_pair = FilePair { source: absolute_source_path, target: absolute_target_path };
+
+  // Add the new file pair to the configuration
+  config.files.push(new_file_pair);
+
+  // Serialize the updated configuration back to TOML
+  let updated_config = toml::to_string(&config).expect("Could not serialize config");
+
+  // Write the updated TOML content back to the configuration file
+  let mut file = fs::File::create(config_path).expect("Could not write to config file");
+  file.write_all(updated_config.as_bytes()).expect("Could not write config file");
+
+  Ok(())
+}
+
+fn update_files(config: &Option<PathBuf>) -> Result<(), MyError> {
+  // parse config file
+  let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
+  let config_content = fs::read_to_string(config_path).expect("could not read config file");
+  let config: Config = toml::from_str(&config_content).expect("Could not parse config file");
+  info!("updating files: {config:?}");
+
+  // Iterate over file pairs and update each one
+  for file_pair in config.files {
+    update_file(&file_pair.source, &file_pair.target)?;
+  }
+
+  Ok(())
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct Config {
+  files: Vec<FilePair>,
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+struct FilePair {
+  source: PathBuf,
+  target: Option<PathBuf>,
+}
+
+fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), MyError> {
+  debug!("source_filename: {:?}", &source_path);
   let mut content = fs::read_to_string(source_path).expect("could not read file");
   let original_date =
     content.lines().find(|line| line.starts_with("date: ")).unwrap().replace("date: ", "");
-  debug!("source_filename: {:?}", &source_path);
 
+  let mut assume_blog = true;
   let target_path = {
     if let Some(path) = target_path {
+      assume_blog = false;
       path.clone()
     } else {
       let source_filename = source_path
@@ -52,10 +181,10 @@ fn main() -> Result<(), MyError> {
   debug!("target: {target_path:?}");
 
   // update `last-update` field in content
-  let new_line = format!("last-update: {}", Local::now().format(DATE_FORMAT));
+  let last_update = format!("last-update: {}", Local::now().format(DATE_FORMAT));
   content = content
     .lines()
-    .map(|line| if line.starts_with("last-update:") { &new_line } else { line })
+    .map(|line| if line.starts_with("last-update:") { &last_update } else { line })
     .collect::<Vec<_>>()
     .join("\n");
 
@@ -66,7 +195,14 @@ fn main() -> Result<(), MyError> {
     info!("updated source file created on date: {original_date}");
   }
 
-  // Now we update images in the target image directory:
+  if assume_blog {
+    update_images(&original_date, &content, &target_path)?;
+  }
+  Ok(())
+}
+
+fn update_images(original_date: &str, content: &str, target_path: &Path) -> Result<(), MyError> {
+  // update images in the target image directory:
   // - if target image directory does not exist, create it.
   // - create a list of image filenames in the source content.
   // - for each image, copy the image from the source_img_dir to the target image dir.
@@ -80,11 +216,10 @@ fn main() -> Result<(), MyError> {
 
   // update image links to match hugo syntax
   // match against syntax ![[image.png]]
-  let re = regex::Regex::new(r"\!\[\[([^\]]+)\]\]").unwrap();
-
   let mut image_filenames = Vec::new();
-  content = re
-    .replace_all(&content, |caps: &regex::Captures| {
+  let re = regex::Regex::new(r"\!\[\[([^\]]+)\]\]").unwrap();
+  let content = re
+    .replace_all(content, |caps: &regex::Captures| {
       let image_filename = &caps[1];
       image_filenames.push(image_filename.to_string());
       debug!("image_filename: {:?}", image_filename);
@@ -98,7 +233,7 @@ fn main() -> Result<(), MyError> {
 
   // replace file at target with source content. open scope to auto flush.
   {
-    let mut file = fs::File::create(target_path.clone())?;
+    let mut file = fs::File::create(target_path)?;
     file.write_all(content.as_bytes())?;
     info!("updated target file: {target_path:?}");
   }
