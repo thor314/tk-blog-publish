@@ -15,7 +15,8 @@ use std::{
 use anyhow::Context;
 use chrono::Local;
 use error::MyError;
-use log::{debug, info, trace};
+use log::{debug, info, trace, warn};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use crate::cli::Cli;
@@ -180,28 +181,25 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
   };
   debug!("target: {target_path:?}");
 
+  // hugo doesn't recognize double backslash in align blocks, so
+  // replace trailing double-backslash with triple-backslash in align blocks
+  let backslash_re = Regex::new(r"([^\\])\\{2}\n").unwrap();
+  let content = backslash_re
+    .replace_all(&content, |caps: &regex::Captures| {
+      let c1 = &caps[1];
+      debug!("string before: {:?}", &caps[0]);
+      let s = format!("{c1} \\\\\\\n");
+      debug!("string after: {:?}", s);
+      s
+    })
+    .to_string();
+
   // update original file with new `last-update` field
   {
     let mut file = fs::File::create(source_path)?;
     file.write_all(content.as_bytes())?;
     info!("updated source file created on date: {original_date}");
   }
-
-  // look for instances of:
-  // $$\begin{align} ... \end{align}$$
-  // and replace with $$line$$ for each line
-  // let re = regex::Regex::new(r"\$\$\\begin\{align\}(.*\n?)+\\end\{align\}\$\$").unwrap();
-  // let content = re
-  //   .replace_all(&content, |caps: &regex::Captures| {
-  //     let lines = caps[1].lines();
-  //     let mut new_content = String::new();
-  //     for line in lines {
-  //       new_content.push_str(&format!("$$ {} $$\n", line));
-  //     }
-  //     debug!("new_content: {:?}", new_content);
-  //     new_content
-  //   })
-  //   .to_string();
 
   if assume_blog {
     update_images(&original_date, &content, &target_path)?;
@@ -238,7 +236,7 @@ fn update_images(original_date: &str, content: &str, target_path: &Path) -> Resu
   // update image links to match hugo syntax
   // match against syntax ![[image.png]]
   let mut image_filenames = Vec::new();
-  let re = regex::Regex::new(r"\!\[\[([^\]]+)\]\]").unwrap();
+  let re = Regex::new(r"\!\[\[([^\]]+)\]\]").unwrap();
   let content = re
     .replace_all(content, |caps: &regex::Captures| {
       let image_filename = &caps[1];
