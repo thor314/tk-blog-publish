@@ -11,8 +11,11 @@ use clap::Parser;
 pub struct Cli {
   /// Sets the source file to use
   #[arg(index = 1)]
-  pub source: PathBuf,
+  pub source_path: PathBuf,
+  /// Sets the source file to use
+  #[arg(index = 2)]
+  pub target_path: Option<PathBuf>,
   /// Sets a custom config file
   #[arg(short, long, value_name = "FILE")]
-  config:     Option<PathBuf>,
+  pub config:      Option<PathBuf>,
 }
