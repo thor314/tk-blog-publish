@@ -12,7 +12,7 @@ use std::{
 
 use chrono::Local;
 use error::MyError;
-use log::{debug, error, info, trace};
+use log::{debug, info, trace};
 
 mod error;
 #[cfg(test)] mod tests;
@@ -41,14 +41,15 @@ fn main() -> Result<(), MyError> {
 /// replace file at target with source content.
 /// if target does not exist, create it.
 /// if image directory does not exist, create it.
-/// 
 fn update_target(target: PathBuf, source_content: &str) -> Result<(), MyError> {
-  let target_dir = target.parent().expect("invalid target path");
+  let _target_dir = target.parent().expect("invalid target path");
   let target_filename = target.file_name().expect("invalid target filename");
-  let img_dir = format!("/home/thor/projects/blog/static/photos/{}",target_filename.to_str().unwrap());
-  let img_dir = Path::new(&img_dir);
+  let img_dir =
+    format!("/home/thor/projects/blog/static/photos/{}", target_filename.to_str().unwrap());
+  let _img_dir = Path::new(&img_dir);
 
-  let img_dir = format!("/home/thor/projects/blog/static/photos/{}",target_filename.to_str().unwrap());
+  let _img_dir =
+    format!("/home/thor/projects/blog/static/photos/{}", target_filename.to_str().unwrap());
   if !target.exists() {
     // create target file
     info!("target does not exist, creating new file");
@@ -63,7 +64,7 @@ fn update_target(target: PathBuf, source_content: &str) -> Result<(), MyError> {
   todo!()
 }
 
-fn create_target(target: PathBuf, create: bool) -> Result<(), MyError> { Ok(()) }
+fn create_target(_target: PathBuf, _create: bool) -> Result<(), MyError> { Ok(()) }
 
 /// - if an image is found in SOURCE (with syntax `![[image-name.png]]`:
 /// - let image subdirectory name be same as TARGET
@@ -71,7 +72,7 @@ fn create_target(target: PathBuf, create: bool) -> Result<(), MyError> { Ok(()) 
 ///     - if directory already exists, remove it first
 /// - copy any images in the post (from dir: `~/obsidian/media/photos/` to the the blog image
 ///   directory
-fn update_images(target: PathBuf, source_content: &str) -> Result<(), MyError> { todo!() }
+fn update_images(_target: PathBuf, _source_content: &str) -> Result<(), MyError> { todo!() }
 
 /// given source filename, target filename="YYYY-MM-DD-$SOURCE"
 pub fn get_target(source: PathBuf) -> PathBuf {

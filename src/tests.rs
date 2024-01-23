@@ -1,6 +1,6 @@
 mod demo {
   use arbitrary::Arbitrary;
-  use log::{debug, info};
+  use log::info;
   use rstest::{fixture, rstest};
   // rstest provides features to take common context into tests, and set up small cases testing
   #[derive(Clone, Debug, Eq, PartialEq, Arbitrary)]

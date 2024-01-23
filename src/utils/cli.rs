@@ -1,8 +1,6 @@
 use std::path::PathBuf;
 
-use chrono::Local;
 use clap::Parser;
-use log::debug;
 
 /// My Blog Tool
 #[derive(Parser, Debug)]

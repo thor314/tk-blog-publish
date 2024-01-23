@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 pub use cli::Cli;
-use log::{debug, info, trace};
+use log::trace;
 
 use crate::error::MyError;
 
