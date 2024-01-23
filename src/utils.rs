@@ -1,9 +1,11 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
 pub use cli::Cli;
-use log::{error, info};
+use log::{debug, info, trace};
 
 use crate::error::MyError;
+
+mod cli;
 
 /// Set up crate logging and environment variables.
 pub(crate) fn setup() -> Result<Cli, MyError> {
@@ -11,9 +13,8 @@ pub(crate) fn setup() -> Result<Cli, MyError> {
   env_logger::init();
   // tracing_init::init_tracing(); // async alternative
   if std::env::var("DOTENV_OK").is_ok() {
-    info!("loaded dotenv");
+    trace!("loaded dotenv");
   } else {
-    error!("failed to load dotenv");
     return Err(anyhow!("failed to load dotenv").into());
   }
 
@@ -38,28 +39,3 @@ pub(crate) fn setup() -> Result<Cli, MyError> {
 //     tracing_subscriber::fmt().with_env_filter(filter).init();
 //   }
 // }
-
-mod cli {
-  use clap::{Args, Parser};
-
-  // https://docs.rs/clap/latest/clap/
-  /// CLI parser
-  #[derive(Parser, Debug)]
-  #[command(name = "tk")]
-  #[command(bin_name = "tk")]
-  pub enum Cli {
-    Testing(TestArgs),
-  }
-
-  /// Simple program to greet a person
-  #[derive(Debug, Args)]
-  #[command(author, version, about, long_about = None)]
-  pub struct TestArgs {
-    /// Name of the person to greet
-    #[arg(short, long)]
-    pub name:  String,
-    /// Number of times to greet
-    #[arg(short, long, default_value_t = 1)]
-    pub count: usize,
-  }
-}

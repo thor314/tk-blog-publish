@@ -1,6 +1,6 @@
 mod demo {
   use arbitrary::Arbitrary;
-  use log::debug;
+  use log::{debug, info};
   use rstest::{fixture, rstest};
   // rstest provides features to take common context into tests, and set up small cases testing
   #[derive(Clone, Debug, Eq, PartialEq, Arbitrary)]
@@ -24,7 +24,7 @@ mod demo {
   #[case(0, true, true)]
   #[case(1, true, false)]
   fn test_workbench(wb: Wb, #[case] n: usize, #[case] b: bool, #[case] expected: bool) {
-    info!("test logged, workbench is {workbench:?}");
+    info!("test logged, workbench is {wb:?}");
     let wb_ = Wb { count: n, b };
     assert_eq!(wb == wb_, expected); // this will fail for case_1 cases
   }
