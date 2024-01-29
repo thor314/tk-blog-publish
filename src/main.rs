@@ -167,6 +167,7 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
   let target_path = {
     if let Some(path) = target_path {
       assume_blog = false;
+      debug!("got target: {path:?}");
       path.clone()
     } else {
       let source_filename = source_path
@@ -176,6 +177,7 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
         .expect("Non-UTF8 source file name");
 
       let target = format!("{TARGET_PATH_STR}/{original_date}-{source_filename}");
+      debug!("no target, so constructed target path: {target}");
       PathBuf::from(target)
     }
   };
@@ -203,6 +205,11 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
 
   if assume_blog {
     update_images(&original_date, &content, &target_path)?;
+  } else {
+    // replace file at target with source content. open scope to auto flush.
+    let mut file = fs::File::create(target_path.clone())?;
+    file.write_all(content.as_bytes())?;
+    info!("updated target file: {target_path:?}");
   }
   Ok(())
 }
