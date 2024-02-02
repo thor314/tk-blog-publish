@@ -31,7 +31,7 @@ const DATE_FORMAT: &str = "%Y-%m-%d";
 const TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/posts";
 const SOURCE_IMG_PATH_STR: &str = "/home/thor/obsidian/media/image";
 const TARGET_IMG_PATH_STR: &str = "/home/thor/projects/blog/static/photos";
-const CONFIG_FILE_PATH: &str = "/home/thor/.files/scripts/tkblogpublish/config.toml";
+const CONFIG_FILE_PATH: &str = "/home/thor/projects/tk-blog-publish/config.toml";
 
 fn main() -> Result<(), MyError> {
   let cli = &utils::setup()?;
@@ -136,7 +136,7 @@ fn update_files(config: &Option<PathBuf>) -> Result<(), MyError> {
   let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
   let config_content = fs::read_to_string(config_path).expect("could not read config file");
   let config: Config = toml::from_str(&config_content).expect("Could not parse config file");
-  info!("updating files: {config:?}");
+  debug!("updating files: {config:?}");
 
   // Iterate over file pairs and update each one
   for file_pair in config.files {
@@ -200,7 +200,7 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
   {
     let mut file = fs::File::create(source_path)?;
     file.write_all(content.as_bytes())?;
-    info!("updated source file created on date: {original_date}");
+    trace!("updated source file created on date: {original_date}");
   }
 
   if assume_blog {
@@ -266,7 +266,7 @@ fn update_images(original_date: &str, content: &str, target_path: &Path) -> Resu
 
   // target image directory may not yet exist
   if !target_image_dir.exists() {
-    info!("dir does not exist, creating: {:?}", target_image_dir);
+    warn!("dir does not exist, creating: {:?}", target_image_dir);
     fs::create_dir_all(target_image_dir.clone())?;
   }
 

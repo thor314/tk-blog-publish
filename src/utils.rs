@@ -8,7 +8,6 @@ use crate::{cli::Cli, error::MyError};
 pub(crate) fn setup() -> Result<Cli, MyError> {
   dotenv::dotenv().ok();
   env_logger::init();
-  // tracing_init::init_tracing(); // async alternative
   if std::env::var("DOTENV_OK").is_ok() {
     trace!("loaded dotenv");
   } else {
