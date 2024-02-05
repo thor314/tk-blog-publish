@@ -14,3 +14,6 @@ target = "/home/thor/projects/blog/content/about/_index.md"
 
 [[files]]
 source = "/home/thor/obsidian/writing/blog/git-merkle.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/blog/solving zk-hack puzzle 3 - Chaos Theory.md"
