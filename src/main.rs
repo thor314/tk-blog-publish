@@ -101,10 +101,12 @@ fn add_file(
   let absolute_source_path = fs::canonicalize(source_path)
     .with_context(|| format!("Could not canonicalize source path {:?}", source_path))?;
   let absolute_target_path = match target_path {
-    Some(path) => Some(
-      fs::canonicalize(path)
-        .with_context(|| format!("Could not canonicalize target path {:?}", path))?,
-    ),
+    Some(path) => Some(fs::canonicalize(path).with_context(|| {
+      format!(
+        "Could not canonicalize target path {:?}; do not specify target filename, only directory",
+        path
+      )
+    })?),
     None => None,
   };
 
@@ -161,7 +163,7 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
   debug!("source_filename: {:?}", &source_path);
   let content = fs::read_to_string(source_path).expect("could not read file");
   let original_date =
-    content.lines().find(|line| line.starts_with("date: ")).unwrap().replace("date: ", "");
+    content.lines().find(|line| line.starts_with("date: ")).expect("could not fine line starting 'date: '").replace("date: ", "");
 
   let mut assume_blog = true;
   let target_path = {
