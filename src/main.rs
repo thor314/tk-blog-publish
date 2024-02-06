@@ -162,8 +162,18 @@ struct FilePair {
 fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), MyError> {
   debug!("source_filename: {:?}", &source_path);
   let content = fs::read_to_string(source_path).expect("could not read file");
-  let original_date =
-    content.lines().find(|line| line.starts_with("date: ")).expect("could not fine line starting 'date: '").replace("date: ", "");
+
+  let original_date = match content.lines().find(|line| line.starts_with("date: ")) {
+    Some(l) => l.replace("date: ", ""),
+    None => {
+      log::info!("could not find line starting with 'date: '; using file-last-modified date instead");
+      let metadata = fs::metadata(source_path)?;
+      let system_time = metadata.modified().unwrap();
+      let datetime: chrono::DateTime<Local> = system_time.into();
+      // Format the datetime to yyyy-mm-dd
+      datetime.format("%Y-%m-%d").to_string()
+    },
+  };
 
   let mut assume_blog = true;
   let target_path = {
