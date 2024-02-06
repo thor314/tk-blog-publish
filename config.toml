@@ -17,3 +17,7 @@ source = "/home/thor/obsidian/writing/blog/git-merkle.md"
 
 [[files]]
 source = "/home/thor/obsidian/writing/blog/solving zk-hack puzzle 3 - Chaos Theory.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/work/resume.md"
+target = "/home/thor/projects/resume/resume.md"
