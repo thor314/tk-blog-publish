@@ -8,7 +8,7 @@ use anyhow::{anyhow, Context};
 use clap::{Args, Parser};
 use log::info;
 
-use crate::{error::MyError, Config, FilePair, CONFIG_FILE_PATH};
+use crate::{error::MyError, Config, FilePair, CONFIG_FILE_PATH, DEFAULT_PRIVATE_TARGET_PATH_STR, DEFAULT_TARGET_PATH_STR};
 
 #[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Thor Kamphefner")]
@@ -63,9 +63,7 @@ pub struct ConfigAdd {
 
 impl ConfigAdd {
   /// add a file to config file
-  pub fn add_file(
-    &self,
-  ) -> Result<(), MyError> {
+  pub fn add_file(&self) -> Result<(), MyError> {
     let config_path: PathBuf =
       self.config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
     let config_content = fs::read_to_string(&config_path).context("Could not read config file")?;
@@ -79,8 +77,15 @@ impl ConfigAdd {
     // Replace relative paths with absolute paths
     let absolute_source_path = fs::canonicalize(&self.source_path)
       .with_context(|| format!("Could not canonicalize source path {:?}", self.source_path))?;
+
     let absolute_target_path =
-      &self.target_path.clone().map(|path| fs::canonicalize(path).unwrap());
+      &self.target_path.clone().map(|path| fs::canonicalize(path).unwrap()).unwrap_or_else(|| {
+        if self.private {
+          PathBuf::from(DEFAULT_PRIVATE_TARGET_PATH_STR)
+        } else {
+          PathBuf::from(DEFAULT_TARGET_PATH_STR)
+        }
+      });
 
     // Check that source path is not already in config
     if config.files.iter().any(|fp| fp.source == absolute_source_path) {
@@ -89,7 +94,8 @@ impl ConfigAdd {
     println!("Adding file to config: {:?} {:?}", absolute_source_path, absolute_target_path);
 
     // Create a new file pair
-    let new_file_pair = FilePair { source: absolute_source_path, target: absolute_target_path.clone()};
+    let new_file_pair =
+      FilePair { source: absolute_source_path, target: absolute_target_path.clone() };
     // Add the new file pair to the configuration
     config.files.push(new_file_pair);
     // Serialize the updated configuration back to TOML

@@ -28,7 +28,8 @@ mod utils;
 
 const DATE_FORMAT: &str = "%Y-%m-%d";
 // const SOURCE_PATH_STR: &str = "/home/thor/obsidian/writing/blog";
-const TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/posts";
+const DEFAULT_TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/posts";
+const DEFAULT_PRIVATE_TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/private";
 const SOURCE_IMG_PATH_STR: &str = "/home/thor/obsidian/media/image";
 const TARGET_IMG_PATH_STR: &str = "/home/thor/projects/blog/static/photos";
 const CONFIG_FILE_PATH: &str = "/home/thor/projects/tk-blog-publish/config.toml";
@@ -105,7 +106,7 @@ struct Config {
 #[derive(Deserialize, Debug, Serialize)]
 struct FilePair {
   source: PathBuf,
-  target: Option<PathBuf>,
+  target: PathBuf,
 }
 
 fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), MyError> {
@@ -137,7 +138,7 @@ fn update_file(source_path: &Path, target_path: &Option<PathBuf>) -> Result<(), 
         .to_str()
         .expect("Non-UTF8 source file name");
 
-      let target = format!("{TARGET_PATH_STR}/{original_date}-{source_filename}");
+      let target = format!("{DEFAULT_TARGET_PATH_STR}/{original_date}-{source_filename}");
       debug!("no target, so constructed target path: {target}");
       PathBuf::from(target)
     }
