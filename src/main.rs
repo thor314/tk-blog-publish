@@ -152,7 +152,7 @@ impl FilePair {
       trace!("updated source file created on date: {original_date}");
     }
 
-    let convert_images = self.source.to_str().unwrap().contains("/blog/");
+    let convert_images = self.target.to_str().unwrap().contains("/blog/");
     if convert_images {
       self.update_images(&original_date, &content)?;
     } else {
