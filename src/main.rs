@@ -38,7 +38,7 @@ fn main() -> Result<(), MyError> {
   match cli {
     Cli::One(c) => update_file(&c.source_path, &c.target_path)?,
     Cli::All(c) => update_files(&c.config)?,
-    Cli::ConfigAdd(c) => add_file(&c.config, &c.source_path, &c.target_path)?,
+    Cli::ConfigAdd(c) => c.add_file()?,
     Cli::ConfigRemove(c) => remove_file(&c.config, &c.source_path)?,
   }
 
@@ -78,57 +78,6 @@ fn remove_file(
   fs::File::create(&config_path)
     .and_then(|mut file| file.write_all(updated_config.as_bytes()))
     .with_context(|| format!("Could not write to config file at {:?}", config_path))?;
-
-  Ok(())
-}
-
-/// add a file to config file
-fn add_file(
-  config: &Option<PathBuf>,
-  source_path: &Path,
-  target_path: &Option<PathBuf>,
-) -> Result<(), MyError> {
-  let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
-  let config_content = fs::read_to_string(config_path.clone()).expect("could not read config file");
-  let mut config: Config = toml::from_str(&config_content).expect("Could not parse config file");
-
-  // assert that source path exists
-  if !source_path.exists() {
-    return Err(anyhow::anyhow!("source path does not exist").into());
-  }
-
-  // Replace relative paths with absolute paths
-  let absolute_source_path = fs::canonicalize(source_path)
-    .with_context(|| format!("Could not canonicalize source path {:?}", source_path))?;
-  let absolute_target_path = match target_path {
-    Some(path) => Some(fs::canonicalize(path).with_context(|| {
-      format!(
-        "Could not canonicalize target path {:?}; do not specify target filename, only directory",
-        path
-      )
-    })?),
-    None => None,
-  };
-
-  // Check that source path is not already in config
-  if config.files.iter().any(|fp| fp.source == absolute_source_path) {
-    return Err(anyhow::anyhow!("Source path already exists in config").into());
-  }
-
-  info!("Adding file to config: {:?} {:?}", absolute_source_path, absolute_target_path);
-
-  // Create a new file pair
-  let new_file_pair = FilePair { source: absolute_source_path, target: absolute_target_path };
-
-  // Add the new file pair to the configuration
-  config.files.push(new_file_pair);
-
-  // Serialize the updated configuration back to TOML
-  let updated_config = toml::to_string(&config).expect("Could not serialize config");
-
-  // Write the updated TOML content back to the configuration file
-  let mut file = fs::File::create(config_path).expect("Could not write to config file");
-  file.write_all(updated_config.as_bytes()).expect("Could not write config file");
 
   Ok(())
 }
