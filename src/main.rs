@@ -92,7 +92,7 @@ fn update_files(config: &Option<PathBuf>) -> Result<(), MyError> {
 
   // Iterate over file pairs and update each one
   for file_pair in config.files {
-    update_file(&file_pair.source, &file_pair.target)?;
+    update_file(&file_pair.source, &Some(file_pair.target))?;
   }
 
   Ok(())
