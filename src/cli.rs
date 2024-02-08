@@ -8,7 +8,10 @@ use anyhow::{anyhow, Context};
 use clap::{Args, Parser};
 use log::info;
 
-use crate::{error::MyError, Config, FilePair, CONFIG_FILE_PATH, DEFAULT_PRIVATE_TARGET_PATH_STR, DEFAULT_TARGET_PATH_STR};
+use crate::{
+  error::MyError, Config, FilePair, CONFIG_FILE_PATH, DEFAULT_PRIVATE_TARGET_PATH_STR,
+  DEFAULT_TARGET_PATH_STR,
+};
 
 #[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Thor Kamphefner")]
@@ -80,10 +83,12 @@ impl ConfigAdd {
 
     let absolute_target_path =
       &self.target_path.clone().map(|path| fs::canonicalize(path).unwrap()).unwrap_or_else(|| {
+        let path_str = absolute_source_path.to_str().unwrap();
+        let filename = path_str.rsplit_once('/').unwrap_or(("", path_str)).1;
         if self.private {
-          PathBuf::from(DEFAULT_PRIVATE_TARGET_PATH_STR)
+          format!("{}/{}", DEFAULT_PRIVATE_TARGET_PATH_STR, filename).into()
         } else {
-          PathBuf::from(DEFAULT_TARGET_PATH_STR)
+          format!("{}/{}", DEFAULT_TARGET_PATH_STR, filename).into()
         }
       });
 
