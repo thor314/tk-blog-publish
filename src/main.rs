@@ -27,7 +27,6 @@ mod error;
 mod utils;
 
 const DATE_FORMAT: &str = "%Y-%m-%d";
-// const SOURCE_PATH_STR: &str = "/home/thor/obsidian/writing/blog";
 const DEFAULT_TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/posts";
 const DEFAULT_PRIVATE_TARGET_PATH_STR: &str = "/home/thor/projects/blog/content/private";
 const SOURCE_IMG_PATH_STR: &str = "/home/thor/obsidian/media/image";
@@ -37,98 +36,33 @@ const CONFIG_FILE_PATH: &str = "/home/thor/projects/tk-blog-publish/config.toml"
 fn main() -> Result<(), MyError> {
   let cli = &utils::setup()?;
   match cli {
-    // Cli::One(c) => update_file(&c.source_path, &c.target_path)?,
-    Cli::All(c) => update_files(&c.config)?,
-    Cli::ConfigAdd(c) => c.add_file()?,
-    Cli::ConfigRemove(c) => remove_file(&c.config, &c.source_path)?,
+    Cli::Update(c) => c.update_files()?,
+    Cli::Add(c) => c.add_file()?,
+    Cli::Remove(c) => c.remove_file()?,
   }
 
   Ok(())
 }
 
-fn remove_file(
-  config: &Option<PathBuf>,
-  source_path: &Path,
-  // target_path: &Option<PathBuf>,
-) -> Result<(), MyError> {
-  let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
-  let config_content = fs::read_to_string(config_path.clone()).expect("could not read config file");
-  let mut config: Config = toml::from_str(&config_content).expect("Could not parse config file");
-
-  // Look for any file matching end of source_path name and remove it
-  let file_name = source_path
-    .file_name()
-    .ok_or_else(|| anyhow::anyhow!("Invalid source path"))?
-    .to_str()
-    .ok_or_else(|| anyhow::anyhow!("Non-UTF8 source file name"))?;
-
-  let initial_len = config.files.len();
-  config.files.retain(|fp| fp.source.file_name().map_or(false, |name| name != file_name));
-
-  if config.files.len() == initial_len {
-    // No file was removed, indicating the file was not found
-    return Err(anyhow::anyhow!("Source file not found in config").into());
-  }
-
-  info!("Removing file from config: {:?}", source_path);
-
-  // Serialize the updated configuration back to TOML
-  let updated_config = toml::to_string(&config).with_context(|| "Could not serialize config")?;
-
-  // Write the updated TOML content back to the configuration file
-  fs::File::create(&config_path)
-    .and_then(|mut file| file.write_all(updated_config.as_bytes()))
-    .with_context(|| format!("Could not write to config file at {:?}", config_path))?;
-
-  Ok(())
-}
-
-fn update_files(config: &Option<PathBuf>) -> Result<(), MyError> {
-  // parse config file
-  let config_path: PathBuf = config.clone().unwrap_or_else(|| PathBuf::from(CONFIG_FILE_PATH));
-  let config_content = fs::read_to_string(config_path).expect("could not read config file");
-  let config: Config = toml::from_str(&config_content).expect("Could not parse config file");
-
-  debug!("updating files: {config:?}");
-
-  // Iterate over file pairs and update each one
-  for file_pair in config.files {
-    file_pair.update_file()?;
-  }
-
-  Ok(())
-}
-
+/// My toml config file
 #[derive(Deserialize, Serialize, Debug)]
 struct Config {
   files: Vec<FilePair>,
 }
 
+/// mapping from source file to destination file
 #[derive(Deserialize, Debug, Serialize, Default)]
 struct FilePair {
   source: PathBuf,
   target: PathBuf,
-  // convert_images: bool, // default false
 }
 
 impl FilePair {
+  /// update a single file
   pub fn update_file(&self) -> Result<(), MyError> {
     debug!("source_filename: {:?}", &self.source);
     let content = fs::read_to_string(self.source.clone()).expect("could not read file");
-
-    let original_date = match content.lines().find(|line| line.starts_with("date: ")) {
-      Some(l) => l.replace("date: ", ""),
-      None => {
-        log::info!(
-          "could not find line starting with 'date: '; using file-last-modified date instead"
-        );
-        let metadata = fs::metadata(self.source.clone())?;
-        let system_time = metadata.modified().unwrap();
-        let datetime: chrono::DateTime<Local> = system_time.into();
-        // Format the datetime to yyyy-mm-dd
-        datetime.format("%Y-%m-%d").to_string()
-      },
-    };
+    let original_date = get_original_date(&self.source, &content)?;
 
     debug!("target: {:?}", self.target);
 
@@ -164,6 +98,7 @@ impl FilePair {
     Ok(())
   }
 
+  /// update the image links in a file to match blog format
   fn update_images(&self, original_date: &str, content: &str) -> Result<(), MyError> {
     // update images in the target image directory:
     // - if target image directory does not exist, create it.
@@ -232,4 +167,21 @@ impl FilePair {
 
     Ok(())
   }
+}
+
+pub fn get_original_date(source: &Path, content: &str) -> Result<String, MyError> {
+  let original_date = match content.lines().find(|line| line.starts_with("date: ")) {
+    Some(l) => l.replace("date: ", ""),
+    None => {
+      log::info!(
+        "could not find line starting with 'date: '; using file-last-modified date instead"
+      );
+      let metadata = fs::metadata(source)?;
+      let system_time = metadata.created().unwrap();
+      let datetime: chrono::DateTime<Local> = system_time.into();
+      // Format the datetime to yyyy-mm-dd
+      datetime.format(DATE_FORMAT).to_string()
+    },
+  };
+  Ok(original_date)
 }
