@@ -86,8 +86,9 @@ impl FilePair {
       trace!("updated source file created on date: {original_date}");
     }
 
-    let convert_images = self.target.to_str().unwrap().contains("/blog/");
-    if convert_images {
+    // if the target is a blog post, update the images
+    let update_images = self.target.to_str().unwrap().contains("/blog/");
+    if update_images {
       self.update_images(&original_date, &content)?;
     } else {
       // replace file at target with source content. open scope to auto flush.
@@ -98,14 +99,15 @@ impl FilePair {
     Ok(())
   }
 
-  /// update the image links in a file to match blog format
+  /// copy the images over to the blog
+  /// and update the image links in a file to match blog format
   fn update_images(&self, original_date: &str, content: &str) -> Result<(), MyError> {
     // update images in the target image directory:
     // - if target image directory does not exist, create it.
     // - create a list of image filenames in the source content.
     // - for each image, copy the image from the source_img_dir to the target image dir.
 
-    // update image links in target (but not source)
+    // Name the images
     let first_word = self
       .target
       .file_name()
@@ -118,12 +120,13 @@ impl FilePair {
       .split('-')
       .last()
       .expect("No first word after dash in target file name");
-
     let target_image_dir = PathBuf::from(format!(
       "{TARGET_IMG_PATH_STR}/{}-{}",
       original_date, // just use date, since it won't ever have weird edge cases or spaces
       first_word
     ));
+
+    // Find and move the images
     let target_image_dir_name = target_image_dir.file_name().unwrap().to_str().unwrap();
 
     // update image links to match hugo syntax

@@ -3,24 +3,8 @@ source = "/home/thor/obsidian/writing/blog/Getting Started with Obsidian.md"
 target = "/home/thor/projects/obsidian-setup/Getting Started with Obsidian.md"
 
 [[files]]
-source = "/home/thor/obsidian/writing/blog/Solving ZK Hack IV puzzle 2 - Supervillain.md"
-target = "/home/thor/projects/blog/content/posts/Solving ZK Hack IV puzzle 2 - Supervillain.md"
-
-[[files]]
-source = "/home/thor/obsidian/writing/blog/Solving ZK Hack IV puzzle 1 - Gamma Ray.md"
-target = "/home/thor/projects/blog/content/posts/Solving ZK Hack IV puzzle 1 - Gamma Ray.md"
-
-[[files]]
 source = "/home/thor/obsidian/writing/blog/about_me.md"
 target = "/home/thor/projects/blog/content/about/_index.md"
-
-[[files]]
-source = "/home/thor/obsidian/writing/blog/git-merkle.md"
-target = "/home/thor/projects/blog/content/posts/git-merkle.md"
-
-[[files]]
-source = "/home/thor/obsidian/writing/blog/solving zk-hack puzzle 3 - Chaos Theory.md"
-target = "/home/thor/projects/blog/content/posts/solving zk-hack puzzle 3 - Chaos Theory.md"
 
 [[files]]
 source = "/home/thor/obsidian/writing/work/resume.md"
@@ -29,3 +13,19 @@ target = "/home/thor/projects/resume/resume.md"
 [[files]]
 source = "/home/thor/obsidian/writing/blog/About the Stone Prover - part 1.md"
 target = "/home/thor/projects/blog/content/private/About the Stone Prover - part 1.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/blog/Solving ZK Hack IV puzzle 2 - Supervillain.md"
+target = "/home/thor/projects/blog/content/posts/2024-01-24-Solving ZK Hack IV puzzle 2 - Supervillain.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/blog/Solving ZK Hack IV puzzle 1 - Gamma Ray.md"
+target = "/home/thor/projects/blog/content/posts/2024-01-18-Solving ZK Hack IV puzzle 1 - Gamma Ray.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/blog/git-merkle.md"
+target = "/home/thor/projects/blog/content/posts/2024-01-31-git-merkle.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/blog/solving zk-hack puzzle 3 - Chaos Theory.md"
+target = "/home/thor/projects/blog/content/posts/2024-02-05-solving zk-hack puzzle 3 - Chaos Theory.md"

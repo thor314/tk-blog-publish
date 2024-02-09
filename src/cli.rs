@@ -66,8 +66,8 @@ pub struct AddRemove {
   pub config:        Option<PathBuf>,
   #[arg(short, long, default_value = "false")]
   pub private:       bool,
-  #[arg(short, long, default_value = "false")]
-  pub update_images: bool,
+  // #[arg(short, long, default_value = "false")]
+  // pub update_images: bool,
 }
 
 impl AddRemove {
