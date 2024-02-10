@@ -9,8 +9,7 @@ use clap::{Args, Parser};
 use log::{debug, info};
 
 use crate::{
-  error::MyError, Config, FilePair, CONFIG_FILE_PATH, DEFAULT_PRIVATE_TARGET_PATH_STR,
-  DEFAULT_TARGET_PATH_STR,
+  error::MyError, filepair::{Config, FilePair}, utils::get_original_date, CONFIG_FILE_PATH, DEFAULT_PRIVATE_TARGET_PATH_STR, DEFAULT_TARGET_PATH_STR
 };
 
 #[derive(Parser, Debug)]
@@ -58,14 +57,14 @@ impl ConfigPath {
 pub struct AddRemove {
   /// Sets the source file to use.
   #[arg(index = 1)]
-  pub source_path:   PathBuf,
+  pub source_path: PathBuf,
   /// Sets the target file to use. If none provided, assume we are publisihng to the blog.
   #[arg(index = 2)]
-  pub target_path:   Option<PathBuf>,
+  pub target_path: Option<PathBuf>,
   #[arg(short, long)]
-  pub config:        Option<PathBuf>,
+  pub config:      Option<PathBuf>,
   #[arg(short, long, default_value = "false")]
-  pub private:       bool,
+  pub private:     bool,
   // #[arg(short, long, default_value = "false")]
   // pub update_images: bool,
 }
@@ -92,7 +91,7 @@ impl AddRemove {
         let path_str = absolute_source_path.to_str().unwrap();
         let filename = path_str.rsplit_once('/').unwrap_or(("", path_str)).1;
         let content = fs::read_to_string(&absolute_source_path).unwrap();
-        let date = crate::get_original_date(&absolute_source_path, &content).unwrap();
+        let date = get_original_date(&absolute_source_path, &content).unwrap();
         if self.private {
           format!("{DEFAULT_PRIVATE_TARGET_PATH_STR}/{date}-{filename}").into()
         } else {
