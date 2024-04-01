@@ -11,8 +11,8 @@ source = "/home/thor/obsidian/writing/work/resume.md"
 target = "/home/thor/projects/resume/resume.md"
 
 [[files]]
-source = "/home/thor/obsidian/writing/blog/About the Stone Prover - part 1.md"
-target = "/home/thor/projects/blog/content/private/About the Stone Prover - part 1.md"
+source = "/home/thor/obsidian/writing/blog/About the Stone Prover.md"
+target = "/home/thor/projects/blog/content/posts/About the Stone Prover.md"
 
 [[files]]
 source = "/home/thor/obsidian/writing/blog/Solving ZK Hack IV puzzle 2 - Supervillain.md"
