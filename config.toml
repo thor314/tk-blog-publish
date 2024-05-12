@@ -29,3 +29,7 @@ target = "/home/thor/projects/blog/content/posts/2024-01-31-git-merkle.md"
 [[files]]
 source = "/home/thor/obsidian/writing/blog/solving zk-hack puzzle 3 - Chaos Theory.md"
 target = "/home/thor/projects/blog/content/posts/2024-02-05-solving zk-hack puzzle 3 - Chaos Theory.md"
+
+[[files]]
+source = "/home/thor/obsidian/writing/personal/note-on hair, what I've tried, and what I'm interested in trying.md"
+target = "/home/thor/projects/blog/content/private/2024-05-12-hair"
